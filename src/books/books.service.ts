@@ -1,26 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 
 @Injectable()
 export class BooksService {
-  create(createBookDto: CreateBookDto) {
-    return 'This action adds a new book';
-  }
+  constructor(private prisma: PrismaService) {}
 
   findAll() {
-    return `This action returns all books`;
+    return this.prisma.book.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+  async findOne(id: string) {
+    const book = await this.prisma.book.findUnique({ where: { id } });
+    if (!book) throw new NotFoundException(`Book con id ${id} non trovato`);
+    return book;
   }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
+  create(data: CreateBookDto) {
+    return this.prisma.book.create({ data });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+  async update(id: string, data: UpdateBookDto) {
+    await this.findOne(id);
+    return this.prisma.book.update({ where: { id }, data });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.book.delete({ where: { id } });
   }
 }
